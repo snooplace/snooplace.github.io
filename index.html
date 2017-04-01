@@ -21,7 +21,7 @@ margin:0 auto; width: 1000px; display: block;}
 }
 
 .main {padding-top: 100px;}
-
+#color_stats{ text-align: center; }
 </style>
 <body>
 
@@ -56,6 +56,8 @@ margin:0 auto; width: 1000px; display: block;}
   <p></p>
 </div>
 <br/>
+</div>
+<div class="ui segment" id="color_stats">
 </div>
 <canvas width="1000" height="1000" id="canvas"></canvas>
 <script>
@@ -100,8 +102,15 @@ function draw(t) {
 		decode(sx, r, i, s);
 		var out = new Uint8ClampedArray(4 * 1000 * 1000);
 		z =0;
+		var paletteCount = {};
+		var sum = 0;
+		for(var p = 0; p < palette.length; p++){
+			paletteCount[palette[p]] = 0;
+		}
 		for(var l = 0; l < i.length; l++){
 			var col = palette[i[l]];
+			paletteCount[col]+= 1;
+			sum++;
 			out[z] = parseInt(col[1] + col[2], 16);
 			z++;
 			out[z] = parseInt(col[3] + col[4], 16);
@@ -111,7 +120,11 @@ function draw(t) {
 			out[z] = 255;
 			z++;
 		}
-		console.log(out);
+		var colorHTML = '<h2>Color distribution</h2>';
+		for(var m = 0; m < palette.length; m++){
+			colorHTML+= '<span style="color: ' + palette[m] + '">' + ((paletteCount[palette[m]]/sum) * 100).toFixed(2) + '%</span> ';
+		}
+		document.getElementById('color_stats').innerHTML = colorHTML;
 		canvas.putImageData(new ImageData(out, 1000, 1000), 0, 0);
 		document.getElementById('loading').style.display = 'none';
 		
