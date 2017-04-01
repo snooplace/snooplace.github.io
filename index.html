@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>snooplace</title>
+<!-- TODO: Refactor with React. -->
+<style>
+canvas{                    image-rendering: -moz-crisp-edges;         /* Firefox */
+                   image-rendering:   -o-crisp-edges;         /* Opera */
+                   image-rendering: -webkit-optimize-contrast;/* Webkit (non-standard naming) */
+                   image-rendering: crisp-edges;
+-ms-interpolation-mode: nearest-neighbor;  /* IE (non-standard property) */ }
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+</style>
+<body>
+<button onclick="ndraw(-10)">&larr; 10 min before</button> 
+<button onclick="ndraw(-1)">&larr; 1 min before</button> 
+<button onclick="ndraw(1)">&rarr; 1 min after</button>
+<button onclick="ndraw(10)">&rarr; 10 min after</button>
+<br/>
+<h1 id='loading'>Loading...</h1>
+<canvas width="1000" height="1000" id="canvas"></canvas>
+<script>
+window.the_time = Math.round(new Date().getTime() / (1000 * 60));
+var width = 1000,
+    height = 1000;
+
+var canvas = document.getElementById("canvas").getContext("2d");
+
+draw(the_time - 1);
+
+function ndraw(n){
+	window.the_time+= n;
+	draw(window.the_time);
+}
+
+function zoom() {
+  canvas.save();
+  canvas.clearRect(0, 0, width, height);
+  canvas.translate(d3.event.translate[0], d3.event.translate[1]);
+  canvas.scale(d3.event.scale, d3.event.scale);
+}
+
+function decode(e, r, i, s) {
+	r || (r = (new Uint32Array(e.buffer,0,1))[0],
+	e = new Uint8Array(e.buffer,4));
+	for (var t = 0; t < e.byteLength; t++)
+		i[s + 2 * t] = e[t] >> 4,
+		i[s + 2 * t + 1] = e[t] & 15;
+	s += e.byteLength * 2
+}
+var palette = ["#FFFFFF", "#E4E4E4", "#888888", "#222222", "#FFA7D1", "#E50000", "#E59500", "#A06A42", "#E5D900", "#94E044", "#02BE01", "#00D3DD", "#0083C7", "#0000EA", "#CF6EE4", "#820080"];
+function draw(t) {
+	document.getElementById('loading').style.color = 'black';
+	var oReq = new XMLHttpRequest();
+	oReq.responseType = 'arraybuffer';
+	oReq.addEventListener("load", function() {
+		console.log(this.response);
+		var sx = new Uint8Array(this.response);
+		var r, i = new Uint8Array(1000 * 1000);
+		var s = 0;
+		decode(sx, r, i, s);
+		var out = new Uint8ClampedArray(4 * 1000 * 1000);
+		z =0;
+		for(var l = 0; l < i.length; l++){
+			var col = palette[i[l]];
+			out[z] = parseInt(col[1] + col[2], 16);
+			z++;
+			out[z] = parseInt(col[3] + col[4], 16);
+			z++;
+			out[z] = parseInt(col[5] + col[6], 16)
+			z++;
+			out[z] = 255;
+			z++;
+		}
+		console.log(out);
+		canvas.putImageData(new ImageData(out, 1000, 1000), 0, 0);
+		document.getElementById('loading').style.color = 'white';
+		
+	});
+	oReq.open("GET", "https://storage.googleapis.com/redditplace/" + t + ".bin");
+	oReq.send();
+}
+
+</script>
